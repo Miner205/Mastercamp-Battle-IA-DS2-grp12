@@ -7,7 +7,8 @@ class Puissance4:
         self.nb_token = nb_token
         self.player = player
         if board is None:
-            self.board = [[0]*self.nb_col]*self.nb_row
+            self.board = [[0 for _ in range(self.nb_col)]
+              for _ in range(self.nb_row)]
         else:
             self.board = board
 
@@ -16,16 +17,16 @@ class Puissance4:
         if self.nb_token <= 0:
             return actions
         for col_nb in range(self.nb_col):
-            row_nb = self.nb_row
+            row_nb = self.nb_row - 1
             while row_nb >= 0 and self.board[row_nb][col_nb] != 0:
                 row_nb -= 1
             if row_nb >= 0:
-                actions.append(row_nb)
+                actions.append(col_nb)
         return actions
 
     def result(self, action):
         result = Puissance4(nb_col=self.nb_col, nb_row=self.nb_row, win_cond=self.win_cond, board=[[value for value in row] for row in self.board])
-        row_nb = self.nb_row
+        row_nb = self.nb_row - 1
         while self.board[row_nb][action] != 0:
             row_nb -= 1
         result.board[row_nb][action] = self.player
@@ -33,49 +34,47 @@ class Puissance4:
         result.nb_token = self.nb_token - 1
         return result
 
-    # TODO: diagonal and improve the way row and col are computed (it works right now but it checks way to many things)
     def terminal_test(self):
-        col_values = [0]*self.nb_col
-        for row_nb in range(self.nb_row):
-            row_value = 0
-            for col_nb in range(self.nb_col):
-                if row_value == 0:
-                    row_value = self.board[row_nb][col_nb]
-                elif row_value/abs(row_value) == self.board[row_nb][col_nb]:
-                    row_value += self.board[row_nb][col_nb]
-                else:
-                    row_value = self.board[row_nb][col_nb]
 
-                if row_value >= self.win_cond:
-                    return 1
-                elif row_value <= -self.win_cond:
-                    return -1
+        directions = [
+            (0, 1),  # →
+            (1, 0),  # ↓
+            (1, 1),  # ↘
+            (-1, 1)  # ↗
+        ]
 
-                if col_values[col_nb] == 0:
-                    col_values[col_nb] = self.board[row_nb][col_nb]
-                elif col_values[col_nb]/abs(col_values[col_nb]) == self.board[row_nb][col_nb]:
-                    col_values[col_nb] += self.board[row_nb][col_nb]
-                else:
-                    col_values[col_nb] = self.board[row_nb][col_nb]
+        for row in range(self.nb_row):
+            for col in range(self.nb_col):
 
-        for col_value in col_values:
-            if col_value >= self.win_cond:
-                return 1
-            elif col_value <= -self.win_cond:
-                return -1
+                player = self.board[row][col]
 
-        diag_values = [0, 0]
-        for diag_nb in range(self.nb_row):
-            diag_values[0] += self.board[diag_nb][diag_nb]
-            diag_values[1] += self.board[diag_nb][-(diag_nb + 1)]
-        if self.win_cond in diag_values:
-            return 1
-        elif -self.win_cond in diag_values:
-            return -1
+                if player == 0:
+                    continue
+                # Select a direction to explore
+                for dr, dc in directions:
+
+                    count = 1
+
+                    r = row + dr
+                    c = col + dc
+                    # Follow the current direction while the tokens match and we stay inside the board
+                    while (
+                            0 <= r < self.nb_row
+                            and 0 <= c < self.nb_col
+                            and self.board[r][c] == player
+                    ):
+                        count += 1
+
+                        if count >= self.win_cond:
+                            return player
+
+                        r += dr
+                        c += dc
 
         if len(self.actions()) == 0:
             return 0
-        return 2  # TODO: maybe evaluate unfinished board here?
+
+        return 2
 
     # TODO: I still do not really see what to do with this
     def utility(self, player):
@@ -148,5 +147,37 @@ class Puissance4:
 
 
 if __name__ == '__main__':
-    puissance4 = Puissance4()
-    print(puissance4)
+    game = Puissance4()
+    while game.terminal_test() == 2:
+
+        print(game)
+        print()
+
+        if game.player == 1:
+            print("Tour du joueur X")
+        else:
+            print("Tour du joueur O")
+
+        try:
+            action = int(input("Choisissez une colonne : "))
+        except ValueError:
+            print("Veuillez entrer un nombre.")
+            continue
+
+        if action not in game.actions():
+            print("Colonne invalide.")
+            continue
+
+        game = game.result(action)
+
+        print()
+        print(game)
+
+        result = game.terminal_test()
+
+        if result == 1:
+            print("Victoire de X")
+        elif result == -1:
+            print("Victoire de O")
+        else:
+            print("Match nul")
