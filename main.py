@@ -1,4 +1,4 @@
-# TODO: check I did not make any mistake in what I did (j'avais pas trop le temps de vérifier)
+
 class Puissance4:
     def __init__(self, nb_col=12, nb_row=6, win_cond=4, nb_token=42, board=None, player=1):
         self.nb_col = nb_col
@@ -7,24 +7,22 @@ class Puissance4:
         self.nb_token = nb_token
         self.player = player
         if board is None:
-            self.board = [[0 for _ in range(self.nb_col)]
-              for _ in range(self.nb_row)]
+            self.board = [[0 for _ in range(self.nb_col)] for _ in range(self.nb_row)]
         else:
             self.board = board
 
     def actions(self):
+        """return all possible/valid actions."""
         actions = []
         if self.nb_token <= 0:
             return actions
         for col_nb in range(self.nb_col):
-            row_nb = self.nb_row - 1
-            while row_nb >= 0 and self.board[row_nb][col_nb] != 0:
-                row_nb -= 1
-            if row_nb >= 0:
+            if self.board[0][col_nb] == 0:
                 actions.append(col_nb)
         return actions
 
     def result(self, action):
+        """return the new state of the game after applying a valid action on it."""
         result = Puissance4(nb_col=self.nb_col, nb_row=self.nb_row, win_cond=self.win_cond, board=[[value for value in row] for row in self.board])
         row_nb = self.nb_row - 1
         while self.board[row_nb][action] != 0:
@@ -35,7 +33,6 @@ class Puissance4:
         return result
 
     def terminal_test(self):
-
         directions = [
             (0, 1),  # →
             (1, 0),  # ↓
@@ -47,14 +44,12 @@ class Puissance4:
             for col in range(self.nb_col):
 
                 player = self.board[row][col]
-
                 if player == 0:
                     continue
                 # Select a direction to explore
                 for dr, dc in directions:
 
                     count = 1
-
                     r = row + dr
                     c = col + dc
                     # Follow the current direction while the tokens match and we stay inside the board
@@ -64,10 +59,8 @@ class Puissance4:
                             and self.board[r][c] == player
                     ):
                         count += 1
-
                         if count >= self.win_cond:
                             return player
-
                         r += dr
                         c += dc
 
@@ -76,9 +69,9 @@ class Puissance4:
 
         return 2
 
-    # TODO: I still do not really see what to do with this
+    '''# TODO: I still do not really see what to do with this
     def utility(self, player):
-        return self.terminal_test()*player
+        return self.terminal_test()*player'''
 
     def __str__(self):
         puissance4_str = ""
@@ -98,12 +91,9 @@ class Puissance4:
         puissance4_str += "|"
         return puissance4_str
 
-    # TODO: Not sure if there actually is anything to change here
     def algo_decision(self, algo="minimax", max_depth=-1):
-        best_action = None
+        best_action = alpha = beta = None
         best_value = float("inf")*(-self.player)
-        alpha = None
-        beta = None
         if algo == "alpha-beta":
             alpha = -float("inf")
             beta = float("inf")
@@ -122,7 +112,6 @@ class Puissance4:
                     beta = min(beta, best_value)
         return best_action
 
-    # TODO: Not sure if there actually is anything to change here again except for the max_depth part
     def decision_value(self, alpha, beta, max_depth):
         terminal_state = self.terminal_test()
         if terminal_state != 2:
@@ -147,6 +136,35 @@ class Puissance4:
 
 
 if __name__ == '__main__':
+    print("Joueur contre Joueur : 1")
+    print("Joueur contre IA : 2")
+    game_mode = 0
+    while game_mode not in [1, 2]:
+        try:
+            game_mode = int(input("Choisissez l'option 1 ou 2 : "))
+        except ValueError:
+            print("Veuillez entrer un nombre.")
+            continue
+        if game_mode not in [1, 2]:
+            print("Option invalide.")
+            continue
+    print()
+
+    first_player = 0
+    if game_mode == 2:
+        print("Joueur commence en premier : 1")
+        print("IA commence en premier : 2")
+        while first_player not in [1, 2]:
+            try:
+                first_player = int(input("Choisissez l'option 1 ou 2 : "))
+            except ValueError:
+                print("Veuillez entrer un nombre.")
+                continue
+            if first_player not in [1, 2]:
+                print("Option invalide.")
+                continue
+        print()
+
     game = Puissance4()
     while game.terminal_test() == 2:
 
@@ -158,26 +176,47 @@ if __name__ == '__main__':
         else:
             print("Tour du joueur O")
 
-        try:
-            action = int(input("Choisissez une colonne : "))
-        except ValueError:
-            print("Veuillez entrer un nombre.")
-            continue
+        if game_mode == 1 or (first_player == 1 and game.player == 1) or (first_player == 2 and game.player == -1):
+            try:
+                action = int(input("Choisissez une colonne : "))
+            except ValueError:
+                print("Veuillez entrer un nombre.")
+                continue
 
-        if action not in game.actions():
-            print("Colonne invalide.")
-            continue
-
-        game = game.result(action)
+            if action not in game.actions():
+                print("Colonne invalide.")
+                continue
+        else:
+            from time import time
+            t1 = time()
+            action = game.algo_decision(algo="alpha-beta", max_depth=8)
+            t2 = time()
+            print(f"\n--IA décision prise en {t2-t1:.2f} secondes--")
+            print(a, b)
 
         print()
-        print(game)
+        if game.player == 1:
+            print("Choix du joueur X", end="")
+            if first_player == 2:
+                print(" (IA)", end="")
+        else:
+            print("Choix du joueur O", end="")
+            if first_player == 1:
+                print(" (IA)", end="")
+        print(" :", action)
+
+        game = game.result(action)
 
         result = game.terminal_test()
 
         if result == 1:
+            print(game)
             print("Victoire de X")
         elif result == -1:
+            print(game)
             print("Victoire de O")
-        else:
+        elif result == 0:
+            print(game)
             print("Match nul")
+            if game.nb_token == 0:
+                print("Plus de pions disponibles (42 pions max par partie)")
