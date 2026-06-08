@@ -17,8 +17,8 @@ class Puissance4:
         if self.nb_token <= 0:
             return actions
         for col_nb in range(self.nb_col):
-            if self.board[0][col_nb] == 0:
-                actions.append(col_nb)
+            if self.board[0][self.nb_col//2-col_nb//2-1 if col_nb%2==0 else self.nb_col//2+col_nb//2] == 0:
+                actions.append(self.nb_col//2-col_nb//2-1 if col_nb%2==0 else self.nb_col//2+col_nb//2)
         return actions
 
     def result(self, action):
@@ -117,7 +117,7 @@ class Puissance4:
         if terminal_state != 2:
             return terminal_state
         if max_depth == 0:
-            return 0
+            return heuristic_morpion(self.board, -self.player)
         value = float("inf")*(-self.player)
         for action in self.actions():
             if self.player > 0:
@@ -135,17 +135,44 @@ class Puissance4:
         return value
 
 
+def heuristic_morpion(grille, player, nb_row=6, nb_col=12):
+    count = 0
+    # win in rows ?
+    for k in range(0, nb_row - 4 + 1):
+        for g in range(0, nb_col - 4 + 1):
+            for row in range(4):
+                s = sum([grille[row+k][col+g] for col in range(4)])
+                if s == 3 * player:
+                    count += 1
+            # win in cols ?
+            '''for col in range(4):
+                s = sum([grille[row+k][col+g] for row in range(4)])
+                if s == 3 * player:
+                    count += 1'''
+            # win in diagonals ?
+            s = sum([grille[row][col] for col in range(g, 4+g) for row in range(k, 4+k) if row+g == col+k])
+            if s == 3 * player:
+                count += 1
+            # win in reversed diagonals ?
+            s = sum([grille[row][col] for col in range(g, 4+g) for row in range(k, 4+k) if row-g == 3-col-1+k])
+            if s == 3 * player:
+                count += 1
+
+    return (count * player) / 7
+
+
 if __name__ == '__main__':
     print("Joueur contre Joueur : 1")
     print("Joueur contre IA : 2")
+    print("IA contre IA : 3")
     game_mode = 0
-    while game_mode not in [1, 2]:
+    while game_mode not in [1, 2, 3]:
         try:
-            game_mode = int(input("Choisissez l'option 1 ou 2 : "))
+            game_mode = int(input("Choisissez l'option 1, 2 ou 3 : "))
         except ValueError:
             print("Veuillez entrer un nombre.")
             continue
-        if game_mode not in [1, 2]:
+        if game_mode not in [1, 2, 3]:
             print("Option invalide.")
             continue
     print()
@@ -176,7 +203,7 @@ if __name__ == '__main__':
         else:
             print("Tour du joueur O")
 
-        if game_mode == 1 or (first_player == 1 and game.player == 1) or (first_player == 2 and game.player == -1):
+        if game_mode != 3 or (game_mode == 1 or (first_player == 1 and game.player == 1) or (first_player == 2 and game.player == -1)):
             try:
                 action = int(input("Choisissez une colonne : "))
             except ValueError:
@@ -189,18 +216,18 @@ if __name__ == '__main__':
         else:
             from time import time
             t1 = time()
-            action = game.algo_decision(algo="alpha-beta", max_depth=6)
+            action = game.algo_decision(algo="alpha-beta", max_depth=5)
             t2 = time()
             print(f"\n--IA décision prise en {t2-t1:.2f} secondes--")
 
         print()
         if game.player == 1:
             print("Choix du joueur X", end="")
-            if first_player == 2:
+            if first_player == 2 or game_mode == 3:
                 print(" (IA)", end="")
         else:
             print("Choix du joueur O", end="")
-            if first_player == 1:
+            if first_player == 1 or game_mode == 3:
                 print(" (IA)", end="")
         print(" :", action)
 
