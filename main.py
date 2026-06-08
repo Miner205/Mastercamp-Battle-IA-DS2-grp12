@@ -192,7 +192,6 @@ if __name__ == '__main__':
             action = game.algo_decision(algo="alpha-beta", max_depth=8)
             t2 = time()
             print(f"\n--IA décision prise en {t2-t1:.2f} secondes--")
-            print(a, b)
 
         print()
         if game.player == 1:
