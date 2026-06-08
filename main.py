@@ -158,7 +158,7 @@ def heuristic_morpion(grille, player, nb_row=6, nb_col=12):
             if s == 3 * player:
                 count += 1
 
-    return (count * player) / 7
+    return (count * player) / 70
 
 
 if __name__ == '__main__':
@@ -203,7 +203,7 @@ if __name__ == '__main__':
         else:
             print("Tour du joueur O")
 
-        if game_mode != 3 or (game_mode == 1 or (first_player == 1 and game.player == 1) or (first_player == 2 and game.player == -1)):
+        if game_mode != 3 and (game_mode == 1 or (first_player == 1 and game.player == 1) or (first_player == 2 and game.player == -1)):
             try:
                 action = int(input("Choisissez une colonne : "))
             except ValueError:
