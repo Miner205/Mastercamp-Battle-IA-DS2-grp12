@@ -172,7 +172,6 @@ def IA_Decision(matrice, nb_row=6, nb_col=12, win_cond=4, algo="alpha-beta", max
         while row_nb < 6 and matrice[row_nb][col_nb] == 0:
             row_nb += 1
         nb_token -= 6 - row_nb
-    print("#### ", nb_token)
     p = Puissance4(board=matrice, nb_token=nb_token)
     return p.algo_decision(algo="alpha-beta", max_depth=5)
 
@@ -271,7 +270,13 @@ def our_heuristic_morpion(grille, player, nb_row=6, nb_col=12):
 
 def Terminal_Test(matrice, nb_row=6, nb_col=12, win_cond=4, nb_token=42):
     """retourne True ou False selon que le jeu est terminé ou non"""
-    t = our_terminal_test(matrice, nb_row=6, nb_col=12, win_cond=4, nb_token=42)
+    nb_token = 42
+    for col_nb in range(12):
+        row_nb = 0
+        while row_nb < 6 and matrice[row_nb][col_nb] == 0:
+            row_nb += 1
+        nb_token -= 6 - row_nb
+    t = our_terminal_test(matrice, nb_row=6, nb_col=12, win_cond=4, nb_token=nb_token)
     return False if t == 2 else True
 
 
