@@ -1,15 +1,15 @@
 
 class Puissance4:
-    def __init__(self, nb_col=12, nb_row=6, win_cond=4, nb_token=42, board=None, player=1):
-        self.nb_col = nb_col
+    def __init__(self, nb_row=6, nb_col=12, win_cond=4, nb_token=42, board=None, player=1):
         self.nb_row = nb_row
+        self.nb_col = nb_col
         self.win_cond = win_cond
         self.nb_token = nb_token
-        self.player = player
         if board is None:
             self.board = [[0 for _ in range(self.nb_col)] for _ in range(self.nb_row)]
         else:
             self.board = board
+        self.player = player
 
     def actions(self):
         """return all possible/valid actions."""
@@ -23,7 +23,7 @@ class Puissance4:
 
     def result(self, action):
         """return the new state of the game after applying a valid action on it."""
-        result = Puissance4(nb_col=self.nb_col, nb_row=self.nb_row, win_cond=self.win_cond, board=[[value for value in row] for row in self.board])
+        result = Puissance4(nb_row=self.nb_row, nb_col=self.nb_col, win_cond=self.win_cond, board=[[value for value in row] for row in self.board])
         row_nb = self.nb_row - 1
         while self.board[row_nb][action] != 0:
             row_nb -= 1
