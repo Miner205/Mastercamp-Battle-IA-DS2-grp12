@@ -165,7 +165,154 @@ def heuristic_morpion(grille, player, nb_row=6, nb_col=12):
 
     return (count * player) / 70
 
+def IA_Decision(matrice, nb_row=6, nb_col=12, win_cond=4, algo="alpha-beta", max_depth=5, player=1, nb_token=42):
+    nb_token = 42
+    for col_nb in range(12):
+        row_nb = 0
+        while row_nb < 6 and matrice[row_nb][col_nb] == 0:
+            row_nb += 1
+        nb_token -= 6 - row_nb
+    print("#### ", nb_token)
+    p = Puissance4(board=matrice, nb_token=nb_token)
+    return p.algo_decision(algo="alpha-beta", max_depth=5)
 
+
+'''
+def IA_Decision(matrice, nb_row=6, nb_col=12, win_cond=4, algo="alpha-beta", max_depth=5, player=1, nb_token=42):
+    """retourne l’action à jouer (ici le numéro de colonne). Votre
+    IA est le joueur 1, l’adversaire est -1."""
+    start_time = time()
+    best_action = alpha = beta = None
+    best_value = float("inf")*(-player)
+    if algo == "alpha-beta":
+        alpha = -float("inf")
+        beta = float("inf")
+    for action in our_actions(matrice, nb_col=nb_col, nb_token=nb_token):
+        temp, player, nb_token = our_result(matrice, action, player, nb_token=nb_token, nb_row=nb_row)
+        value = decision_value(temp, alpha, beta, max_depth, player, nb_token, start_time)
+        if player > 0:
+            if value > best_value:
+                best_value = value
+                best_action = action
+                if algo == "alpha-beta":
+                    alpha = max(alpha, best_value)
+        elif value < best_value:
+            best_value = value
+            best_action = action
+            if algo == "alpha-beta":
+                beta = min(beta, best_value)
+    return best_action'''
+
+def decision_value(matrice, alpha, beta, max_depth, player, nb_token, start_time, nb_row=6, nb_col=12):
+    terminal_state = our_terminal_test(matrice, nb_row=6, nb_col=12, win_cond=4, nb_token=42)
+    if terminal_state != 2:
+        return terminal_state
+    if max_depth == 0:
+        if time()-start_time > 7.5:
+            return 0
+        return our_heuristic_morpion(matrice, -player)
+    value = float("inf")*(-player)
+    for action in our_actions(matrice, nb_col=nb_col, nb_token=nb_token):
+        if player > 0:
+            temp, player, nb_token = our_result(matrice, action, player, nb_token=nb_token, nb_row=nb_row)
+            value = max(value, decision_value(temp, alpha, beta, max_depth - 1, player, nb_token, start_time))
+            if alpha is not None:
+                if value >= beta:
+                    return value
+                alpha = max(alpha, value)
+        else:
+            temp, player, nb_token = our_result(matrice, action, player, nb_token=nb_token, nb_row=nb_row)
+            value = min(value, decision_value(temp, alpha, beta, max_depth - 1, player, nb_token, start_time))
+            if beta is not None:
+                if value <= alpha:
+                    return value
+                beta = min(beta, value)
+    return value
+
+
+def our_result(matrice, action, player, nb_token, nb_row=6):
+    """return the new state of the game after applying a valid action on it."""
+    board = [[value for value in row] for row in matrice]
+    row_nb = nb_row - 1
+    while board[row_nb][action] != 0:
+        row_nb -= 1
+    board[row_nb][action] = player
+    player = -player
+    nb_token = nb_token - 1
+    return board, player, nb_token
+
+
+def our_heuristic_morpion(grille, player, nb_row=6, nb_col=12):
+    count = 0
+    # win in rows ?
+    for k in range(0, nb_row - 4 + 1):
+        for g in range(0, nb_col - 4 + 1):
+            for row in range(4):
+                s = sum([grille[row+k][col+g] for col in range(4)])
+                if s == 3 * player:
+                    count += 1
+            # win in cols ?
+            '''for col in range(4):
+                s = sum([grille[row+k][col+g] for row in range(4)])
+                if s == 3 * player:
+                    count += 1'''
+            # win in diagonals ?
+            s = sum([grille[row][col] for col in range(g, 4+g) for row in range(k, 4+k) if row+g == col+k])
+            if s == 3 * player:
+                count += 1
+            # win in reversed diagonals ?
+            s = sum([grille[row][col] for col in range(g, 4+g) for row in range(k, 4+k) if row-g == 3-col-1+k])
+            if s == 3 * player:
+                count += 1
+
+    return (count * player) / 70
+
+
+
+def Terminal_Test(matrice, nb_row=6, nb_col=12, win_cond=4, nb_token=42):
+    """retourne True ou False selon que le jeu est terminé ou non"""
+    t = our_terminal_test(matrice, nb_row=6, nb_col=12, win_cond=4, nb_token=42)
+    return False if t == 2 else True
+
+
+def our_terminal_test(matrice, nb_row=6, nb_col=12, win_cond=4, nb_token=42):
+    directions = [(0, 1), (1, 0), (1, 1), (-1, 1)]
+    for row in range(nb_row):
+        for col in range(nb_col):
+            player = matrice[row][col]
+            if player == 0:
+                continue
+            # Select a direction to explore
+            for dr, dc in directions:
+                count = 1
+                r = row + dr
+                c = col + dc
+                # Follow the current direction while the tokens match and we stay inside the board
+                while 0 <= r < nb_row and 0 <= c < nb_col and matrice[r][c] == player:
+                    count += 1
+                    if count >= win_cond:
+                        return player
+                    r += dr
+                    c += dc
+    if len(our_actions(matrice, nb_col=nb_col, nb_token=nb_token)) == 0:
+        return 0
+    return 2
+
+
+def our_actions(matrice, nb_col=12, nb_token=42):
+    """return all possible/valid actions."""
+    actions = []
+    if nb_token <= 0:
+        return actions
+    for col_nb in range(nb_col):
+        if matrice[0][nb_col // 2 - col_nb // 2 - 1 if col_nb % 2 == 0 else nb_col // 2 + col_nb // 2] == 0:
+            actions.append(nb_col // 2 - col_nb // 2 - 1 if col_nb % 2 == 0 else nb_col // 2 + col_nb // 2)
+    return actions
+
+
+
+
+'''
 if __name__ == '__main__':
     print("Joueur contre Joueur : 1")
     print("Joueur contre IA : 2")
@@ -220,7 +367,8 @@ if __name__ == '__main__':
                 continue
         else:
             t1 = time()
-            action = game.algo_decision(algo="alpha-beta", max_depth=5)  # IA_Decision(game.board.copy())
+            action = IA_Decision(game.board.copy())#game.algo_decision(algo="alpha-beta", max_depth=5) #IA_Decision(game.board)
+                #
             t2 = time()
             print(f"\n--IA décision prise en {t2-t1:.2f} secondes--")
 
@@ -250,3 +398,4 @@ if __name__ == '__main__':
             print("Match nul")
             if game.nb_token == 0:
                 print("Plus de pions disponibles (42 pions max par partie)")
+'''
